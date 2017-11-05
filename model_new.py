@@ -3,7 +3,29 @@ from tensorflow.python.saved_model import builder as saved_model_builder
 import tensorflow as tf
 import numpy as np
 import argparse
-from input import *
+import pickle
+
+
+def get_train_data():
+    emb = pickle.load(open('/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm/embeddings/train_embed.pkl', 'rb'))
+    tag = pickle.load(open('/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm/embeddings/train_tag.pkl', 'rb'))
+    print('train data loaded')
+    return emb, tag
+
+
+def get_test_a_data():
+    emb = pickle.load(open('/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm/embeddings/test_a_embed.pkl', 'rb'))
+    tag = pickle.load(open('/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm/embeddings/test_a_tag.pkl', 'rb'))
+    print('test_a data loaded')
+    return emb, tag
+
+
+def get_test_b_data():
+    emb = pickle.load(open('/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm/embeddings/test_b_embed.pkl', 'rb'))
+    tag = pickle.load(open('/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm/embeddings/test_b_tag.pkl', 'rb'))
+    print('test_b data loaded')
+    return emb, tag
+
 
 def lstm_rnn_cell(num_units, dropout):
     _cell = tf.nn.rnn_cell.LSTMCell(num_units,state_is_tuple = True)
@@ -119,7 +141,7 @@ def train(args):
     test_b_inp, test_b_out = get_test_b_data()
     model = Model(args)
     maximum = 0
-    builder = tf.saved_model.builder.SavedModelBuilder("./model")
+    #builder = tf.saved_model.builder.SavedModelBuilder("./model")
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         #sess.run(tf.initialize_all_variables())
@@ -158,31 +180,24 @@ def train(args):
                 print("test_b score:")
                 f1(args, pred, test_b_out, length)
         ff.close()  
-        builder.add_meta_graph_and_variables(sess, [tf.saved_model.tag_constants.SERVING])
-        builder.save(True)
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--word_dim', type=int, help='dimension of word vector', required=True)
-parser.add_argument('--sentence_length', type=int, help='max sentence length', required=True)
-parser.add_argument('--class_size', type=int, help='number of classes', required=True)
-parser.add_argument('--rnn_size', type=int, default=256, help='hidden dimension of rnn')
-parser.add_argument('--num_layers', type=int, default=2, help='number of layers in rnn')
-parser.add_argument('--batch_size', type=int, default=128, help='batch size of training')
-parser.add_argument('--epoch', type=int, default=50, help='number of epochs')
-parser.add_argument('--restore', type=str, default=None, help="path of saved model")
-train(parser.parse_args())
+        #builder.add_meta_graph_and_variables(sess, [tf.saved_model.tag_constants.SERVING])
+        #builder.save(True)
 
 
-class arg:
-    def __init__(self):
-        self.word_dim=311#300 + POS + Chunk + Capial
-        self.sentence_length = 30 #decided by me
-        self.class_size = 5 #Conll2003
-        self.rnn_size = 256
-        self.num_layers = 1
-        self.batch_size = 128
-        self.epoch = 5
-        self.restore = None
+
+def predict(args):
+    test_a_inp, test_a_out = get_test_a_data()
+    test_b_inp, test_b_out = get_test_b_data()
+    model = Model(args)
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        #sess.run(tf.initialize_all_variables())
         
-args = arg()
-train(args)
+        saver = tf.train.Saver()
+        saver.restore(sess, 'model_max.ckpt')
+        print("model restored")
+        pred, length , loss = sess.run([model.prediction, model.length, model.loss], {model.input_data: test_a_inp,
+                                                                       model.output_data: test_a_out,
+                                                                       model.dropout: 1.0 })
+        m = f1(args, pred, test_a_out, length)
+

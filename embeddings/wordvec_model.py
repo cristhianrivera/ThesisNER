@@ -54,7 +54,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     model = WordVec(args)
     pkl.dump(model, open('wordvec_model_' + str(args.dimension) + '.pkl', 'wb'))
-"""
+
 
 class arg:
     def __init__(self):
@@ -64,4 +64,4 @@ class arg:
 args = arg()
 model = WordVec(args)
 pkl.dump(model, open('wordvec_model_' + str(args.dimension) + '.pkl', 'wb'))
-
+"""

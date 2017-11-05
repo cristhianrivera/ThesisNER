@@ -17,6 +17,3 @@ class RandomVec:
             return new_vec
         else:
             return self.vec[ind]
-
-    #def __call__(self):
-    #    return "asdf"

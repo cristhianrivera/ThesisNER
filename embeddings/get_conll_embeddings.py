@@ -128,21 +128,5 @@ if __name__ == '__main__':
               sentence_length=args.sentence_length)
 """
 
-class arg:
-    def __init__(self):
-        self.train = '../conll2003/eng_padded.train'
-        self.test_a = '../conll2003/eng_padded.testa'
-        self.test_b = '../conll2003/eng_padded.testb'
-        self.sentence_length = -1
-        self.use_model = 'wordvec_model_300.pkl'
-        self.model_dim = 300
 
-args = arg()
-trained_model = pkl.load(open(args.use_model, 'rb'))
-get_input(trained_model, args.model_dim, args.train, 'train_embed.pkl', 'train_tag.pkl',
-          sentence_length=args.sentence_length)
-get_input(trained_model, args.model_dim, args.test_a, 'test_a_embed.pkl', 'test_a_tag.pkl',
-          sentence_length=args.sentence_length)
-get_input(trained_model, args.model_dim, args.test_b, 'test_b_embed.pkl', 'test_b_tag.pkl',
-          sentence_length=args.sentence_length)
         

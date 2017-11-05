@@ -56,14 +56,6 @@ parser.add_argument('--output', type=str, help='output file location', required=
 parser.add_argument('--trim', type=int, help='trimmed sentence length', required=True)
 args = parser.parse_args()
 """
-class arg:
-    def __init__(self):
-        self.input  = '../conll2003/ORI_eng_testb.txt'
-        self.output = '../conll2003/eng_padded_testb.txt'
-        self.trim = 128
 
-args = arg()
-remove_crap(args.input)
-modify_data_size(args.output, args.trim)
 
 

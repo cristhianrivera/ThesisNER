@@ -6,16 +6,41 @@ Created on Sat Nov  4 14:34:08 2017
 @author: Cristhian
 """
 import os
+
+os.chdir('embeddings')
+from get_conll_embeddings import *
+from wordvec_model import *
+
+os.chdir('../data')
+from resize_input import *
+
+os.chdir('/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm')
 os.getcwd()
-os.chdir('C:\\Python33')
-from model_new import *
+
+#General parameters
+
+max_trim_size = 35
+
+#Resize input
+
+class arg:
+    def __init__(self):
+        self.input  = 'conll2003/eng.train'
+        self.output = 'conll2003/eng_padded_train.txt'
+        self.trim = max_trim_size
+
+args = arg()
+remove_crap(args.input)
+modify_data_size(args.output, args.trim)
+
+os.chdir('/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm/embeddings')
 
 #Get Conll embeddings
 class arg:
     def __init__(self):
-        self.train = '../conll2003/eng_padded.train'
-        self.test_a = '../conll2003/eng_padded.testa'
-        self.test_b = '../conll2003/eng_padded.testb'
+        self.train = '../conll2003/eng_padded_train.txt'
+        self.test_a = '../conll2003/eng_padded_testa.txt'
+        self.test_b = '../conll2003/eng_padded_testb.txt'
         self.sentence_length = -1
         self.use_model = 'wordvec_model_300.pkl'
         self.model_dim = 300
@@ -30,35 +55,22 @@ get_input(trained_model, args.model_dim, args.test_b, 'test_b_embed.pkl', 'test_
           sentence_length=args.sentence_length)
 
 
-
-
-
-
-
-"""
-parser = argparse.ArgumentParser()
-parser.add_argument('--word_dim', type=int, help='dimension of word vector', required=True)
-parser.add_argument('--sentence_length', type=int, help='max sentence length', required=True)
-parser.add_argument('--class_size', type=int, help='number of classes', required=True)
-parser.add_argument('--rnn_size', type=int, default=256, help='hidden dimension of rnn')
-parser.add_argument('--num_layers', type=int, default=2, help='number of layers in rnn')
-parser.add_argument('--batch_size', type=int, default=128, help='batch size of training')
-parser.add_argument('--epoch', type=int, default=50, help='number of epochs')
-parser.add_argument('--restore', type=str, default=None, help="path of saved model")
-train(parser.parse_args())
-"""
-
+#Model
+os.chdir('/Users/Cristhian/Documents/ThesisNER')
+from model_new import *
 
 class arg:
     def __init__(self):
-        self.word_dim=311#300 + POS + Chunk + Capial
-        self.sentence_length = 30 #decided by me
+        self.word_dim=311#300 + POS + Chunk + Capital
+        self.sentence_length = max_trim_size #decided by me
         self.class_size = 5 #Conll2003
         self.rnn_size = 256
         self.num_layers = 1
         self.batch_size = 128
         self.epoch = 5
-        self.restore = None
+        self.restore = '.'
         
 args = arg()
 train(args)
+
+predict(args)
