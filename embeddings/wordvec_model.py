@@ -61,6 +61,7 @@ class arg:
         self.restore = 'GoogleNews-vectors-negative300.bin'
         self.dimension = 300
 
+os.chdir('/home/IAIS/cjimenezri/ner-lstm/ner/embeddings/')
 args = arg()
 model = WordVec(args)
 pkl.dump(model, open('wordvec_model_' + str(args.dimension) + '.pkl', 'wb'))

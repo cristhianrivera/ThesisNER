@@ -14,12 +14,12 @@ from wordvec_model import *
 os.chdir('../data')
 from resize_input import *
 
-os.chdir('/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm')
+os.chdir('/home/IAIS/cjimenezri/ner-lstm/ner')
 os.getcwd()
 
 #General parameters
 
-max_trim_size = 35
+max_trim_size = 30
 
 #Resize input
 
