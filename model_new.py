@@ -6,26 +6,27 @@ import argparse
 import pickle
 
 # for the embeddings
-setDir = '/home/IAIS/cjimenezri/ner-lstm/ner/embeddings/'
+#setDir = '/home/IAIS/cjimenezri/ner-lstm/ner/embeddings/'
+setDir = '/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm/embeddings/'
 
-
+    
 def get_train_data():
-    emb = pickle.load(open(setDir + 'train_embed.pkl', 'rb'))
-    tag = pickle.load(open(setDir + 'train_tag.pkl', 'rb'))
+    emb = pickle.load(open(setDir + 'esp_train_embed.pkl', 'rb'))
+    tag = pickle.load(open(setDir + 'esp_train_tag.pkl', 'rb'))
     print('train data loaded')
     return emb, tag
 
 
 def get_test_a_data():
-    emb = pickle.load(open(setDir + 'test_a_embed.pkl', 'rb'))
-    tag = pickle.load(open(setDir + 'test_a_tag.pkl', 'rb'))
+    emb = pickle.load(open(setDir + 'esp_test_a_embed.pkl', 'rb'))
+    tag = pickle.load(open(setDir + 'esp_test_a_tag.pkl', 'rb'))
     print('test_a data loaded')
     return emb, tag
 
 
 def get_test_b_data():
-    emb = pickle.load(open(setDir + 'test_b_embed.pkl', 'rb'))
-    tag = pickle.load(open(setDir + 'test_b_tag.pkl', 'rb'))
+    emb = pickle.load(open(setDir + 'esp_test_b_embed.pkl', 'rb'))
+    tag = pickle.load(open(setDir + 'esp_test_b_tag.pkl', 'rb'))
     print('test_b data loaded')
     return emb, tag
 
@@ -42,7 +43,7 @@ class Model:
         self.args = args
         self.input_data = tf.placeholder(tf.float32, [None, args.sentence_length, args.word_dim], name = "input")
         self.output_data = tf.placeholder(tf.float32, [None, args.sentence_length, args.class_size], name = "output")
-        self.dropout = tf.placeholder(tf.float32,name = "dropout")
+        self.dropout = tf.placeholder(tf.float32, name = "dropout")
         with tf.variable_scope("layer_1"):
             fw_cell = tf.nn.rnn_cell.MultiRNNCell([lstm_rnn_cell(args.rnn_size, dropout = self.dropout) for _ in range(args.num_layers)], 
                                                    state_is_tuple = True)
@@ -149,27 +150,33 @@ def train(args):
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         #sess.run(tf.initialize_all_variables())
-        
+
         saver = tf.train.Saver()
         if args.restore is not None:
             saver.restore(sess, 'model.ckpt')
             print("model restored")
             
         ff = open(args.model_name + '_' + str(args.sentence_length) + '_loss.txt', 'w')
+        
         ff1 = open(args.model_name + '_' + str(args.sentence_length) + '_f1.txt', 'w')
         fprecision = open(args.model_name + '_' + str(args.sentence_length) + '_precision.txt', 'w')
         frecall = open(args.model_name + '_' + str(args.sentence_length) + '_recall.txt', 'w')
-        for e in range(args.epoch):
+        
+        
+        for e in range(args.epoch):            
             for ptr in range(0, len(train_inp), args.batch_size):
+
                 sess.run(model.train_op, {model.input_data: train_inp[ptr:ptr + args.batch_size],
                                           model.output_data: train_out[ptr:ptr + args.batch_size],
-                                          model.dropout: 0.5})
+                                          model.dropout: float(0.5)})
+                
+            
             if e % 10 == 0:
                 save_path = saver.save(sess, "model.ckpt")
                 print("model saved in file: %s" % save_path)
             pred, length , loss = sess.run([model.prediction, model.length, model.loss], {model.input_data: test_a_inp,
                                                                        model.output_data: test_a_out,
-                                                                       model.dropout: 1.0 })
+                                                                       model.dropout: float(1.0) })
             
             ff.writelines("%d \t %f" % (e ,loss))
             
@@ -177,10 +184,10 @@ def train(args):
             print("epoch %d:" % e)
             print('test_a score:')
             m = f1(args, pred, test_a_out, length)
+            
             fprecision.writelines("%d \t %f" % (e ,m[1]))
             frecall.writelines("%d \t %f" % (e ,m[2]))
             ff1.writelines("%d \t %f" % (e ,m[0]))
-            
             
             if m[0] > maximum:
                 maximum = m[0]
@@ -188,13 +195,15 @@ def train(args):
                 print("max model saved in file: %s" % save_path)
                 pred, length = sess.run([model.prediction, model.length], {model.input_data: test_b_inp,
                                                                            model.output_data: test_b_out,
-                                                                           model.dropout: 1.0 })
+                                                                           model.dropout: float(1.0) })
                 print("test_b score:")
                 f1(args, pred, test_b_out, length)
         ff.close()  
+
         fprecision.close()
         frecall.close()
         ff1.close()
+        
         #builder.add_meta_graph_and_variables(sess, [tf.saved_model.tag_constants.SERVING])
         #builder.save(True)
 

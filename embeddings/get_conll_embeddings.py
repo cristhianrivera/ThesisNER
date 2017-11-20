@@ -58,7 +58,7 @@ def capital(word):
         return np.array([0])
 
 
-def get_input(model, word_dim, input_file, output_embed, output_tag, sentence_length=-1):
+def get_input_eng(model, word_dim, input_file, output_embed, output_tag, sentence_length=-1):
     print('processing %s' % input_file)
     word = []
     tag = []
@@ -108,6 +108,78 @@ def get_input(model, word_dim, input_file, output_embed, output_tag, sentence_le
     assert (len(sentence) == len(sentence_tag))
     pkl.dump(sentence, open(output_embed, 'wb'))
     pkl.dump(sentence_tag, open(output_tag, 'wb'))
+    
+    
+    
+def get_input_esp(model, word_dim, input_file, output_embed, output_tag, sentence_length=-1):
+    print('processing %s' % input_file)
+    word = []
+    tag = []
+    sentence = []
+    sentence_tag = []
+    if sentence_length == -1:
+        max_sentence_length = find_max_length(input_file)
+    else:
+        max_sentence_length = sentence_length
+    sentence_length = 0
+    print("max sentence length is %d" % max_sentence_length)
+    for line in open(input_file):
+        if line in ['\n', '\r\n']:
+            #line = line.decode('latin-1')
+            for _ in range(max_sentence_length - sentence_length):
+                tag.append(np.array([0] * 5))
+                temp = np.array([0 for _ in range(word_dim + 6)])#IMPORTANT for no Chunk
+                word.append(temp)
+            sentence.append(word)
+            sentence_tag.append(np.array(tag))
+            sentence_length = 0
+            word = []
+            tag = []
+        else:
+            #line = line.decode('latin-1')
+            assert (len(line.split()) == 3)# this is for spanish
+            sentence_length += 1
+            temp = model[line.split()[0]]
+            assert len(temp) == word_dim
+            temp = np.append(temp, pos(line.split()[1]))  # adding pos embeddings
+            #temp = np.append(temp, chunk(line.split()[2]))  # adding chunk embeddings
+            temp = np.append(temp, capital(line.split()[0]))  # adding capital embedding
+            word.append(temp)
+            t = line.split()[2]
+            # Five classes 0-None,1-Person,2-Location,3-Organisation,4-Misc
+            if t.endswith('PER'):
+                tag.append(np.array([1, 0, 0, 0, 0]))
+            elif t.endswith('LOC'):
+                tag.append(np.array([0, 1, 0, 0, 0]))
+            elif t.endswith('ORG'):
+                tag.append(np.array([0, 0, 1, 0, 0]))
+            elif t.endswith('MISC'):
+                tag.append(np.array([0, 0, 0, 1, 0]))
+            elif t.endswith('O'):
+                tag.append(np.array([0, 0, 0, 0, 1]))
+            else:
+                print("error in input tag {%s}" % t)
+                sys.exit(0)
+    assert (len(sentence) == len(sentence_tag))
+    pkl.dump(sentence, open(output_embed, 'wb'))
+    pkl.dump(sentence_tag, open(output_tag, 'wb'))
+    
+    
+def get_tags(input_file):
+    tags = dict()
+    for line in open(input_file):
+        if line in ['\n', '\r\n']:
+            continue
+        else :
+            try:
+                tag = line.split()[1]
+            except:
+                print(line)
+            if tag in tags:
+                continue
+            else:
+               tags[tag] = tag
+    return tags
 
 """
 if __name__ == '__main__':
