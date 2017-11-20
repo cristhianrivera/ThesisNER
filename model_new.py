@@ -6,28 +6,29 @@ import argparse
 import pickle
 
 # for the embeddings
-#setDir = '/home/IAIS/cjimenezri/ner-lstm/ner/embeddings/'
-setDir = '/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm/embeddings/'
-
+setDir = '/home/IAIS/cjimenezri/ner-lstm/ner/embeddings/'
+language = 'deu'
+#setDir = '/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm/embeddings/'
+max_trim_size = 25
     
 def get_train_data():
-    emb = pickle.load(open(setDir + 'esp_train_embed.pkl', 'rb'))
-    tag = pickle.load(open(setDir + 'esp_train_tag.pkl', 'rb'))
-    print('train data loaded')
+    emb = pickle.load(open(setDir + language + '_train_embed_' + str(max_trim_size) + '.pkl', 'rb'))
+    tag = pickle.load(open(setDir + language + '_train_tag_' + str(max_trim_size) + '.pkl', 'rb'))
+    print('train ' + str(max_trim_size) + ' data loaded')
     return emb, tag
 
 
 def get_test_a_data():
-    emb = pickle.load(open(setDir + 'esp_test_a_embed.pkl', 'rb'))
-    tag = pickle.load(open(setDir + 'esp_test_a_tag.pkl', 'rb'))
-    print('test_a data loaded')
+    emb = pickle.load(open(setDir + language + '_test_a_embed_' + str(max_trim_size) + '.pkl', 'rb'))
+    tag = pickle.load(open(setDir + language + '_test_a_tag_' + str(max_trim_size) + '.pkl', 'rb'))
+    print('test_a ' + str(max_trim_size) + ' data loaded')
     return emb, tag
 
 
 def get_test_b_data():
-    emb = pickle.load(open(setDir + 'esp_test_b_embed.pkl', 'rb'))
-    tag = pickle.load(open(setDir + 'esp_test_b_tag.pkl', 'rb'))
-    print('test_b data loaded')
+    emb = pickle.load(open(setDir + language + '_test_b_embed_' + str(max_trim_size) + '.pkl', 'rb'))
+    tag = pickle.load(open(setDir + language + '_test_b_tag_' + str(max_trim_size) + '.pkl', 'rb'))
+    print('test_b ' + str(max_trim_size) + ' data loaded')
     return emb, tag
 
 
@@ -153,7 +154,7 @@ def train(args):
 
         saver = tf.train.Saver()
         if args.restore is not None:
-            saver.restore(sess, 'model.ckpt')
+            saver.restore(sess, 'model_' + args.model_name + '.ckpt')
             print("model restored")
             
         ff = open(args.model_name + '_' + str(args.sentence_length) + '_loss.txt', 'w')
@@ -172,7 +173,7 @@ def train(args):
                 
             
             if e % 10 == 0:
-                save_path = saver.save(sess, "model.ckpt")
+                save_path = saver.save(sess, 'model_' + args.model_name + '.ckpt')
                 print("model saved in file: %s" % save_path)
             pred, length , loss = sess.run([model.prediction, model.length, model.loss], {model.input_data: test_a_inp,
                                                                        model.output_data: test_a_out,
@@ -191,7 +192,7 @@ def train(args):
             
             if m[0] > maximum:
                 maximum = m[0]
-                save_path = saver.save(sess, "model_max.ckpt")
+                save_path = saver.save(sess, 'model_' + args.model_name + '_max.ckpt')
                 print("max model saved in file: %s" % save_path)
                 pred, length = sess.run([model.prediction, model.length], {model.input_data: test_b_inp,
                                                                            model.output_data: test_b_out,
