@@ -26,8 +26,8 @@ max_trim_size = 30
 
 class arg:
     def __init__(self):
-        self.input  = 'conll2002/esp.testb'
-        self.output = 'conll2002/esp_padded_testb.txt'
+        self.input  = 'conll2003/deu.testb'
+        self.output = 'conll2003/deu_padded_testb.txt'
         self.trim = max_trim_size
 
 args = arg()
@@ -39,20 +39,20 @@ os.chdir('/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fra
 #Get Conll embeddings
 class arg:
     def __init__(self):
-        self.train = '../conll2002/esp_padded_train.txt'
-        self.test_a = '../conll2002/esp_padded_testa.txt'
-        self.test_b = '../conll2002/esp_padded_testb.txt'
+        self.train = '../conll2003/deu_padded_train.txt'
+        self.test_a = '../conll2003/deu_padded_testa.txt'
+        self.test_b = '../conll2003/deu_padded_testb.txt'
         self.sentence_length = -1
-        self.use_model = 'esp_wordvec_model_300.pkl'
+        self.use_model = 'deu_wordvec_model_300.pkl'
         self.model_dim = 300
 
 args = arg()
 trained_model = pkl.load(open(args.use_model, 'rb'))
-get_input_esp(trained_model, args.model_dim, args.train, 'esp_train_embed.pkl', 'esp_train_tag.pkl',
+get_input_deu(trained_model, args.model_dim, args.train, 'deu_train_embed.pkl', 'deu_train_tag.pkl',
           sentence_length=args.sentence_length)
-get_input_esp(trained_model, args.model_dim, args.test_a, 'esp_test_a_embed.pkl', 'esp_test_a_tag.pkl',
+get_input_deu(trained_model, args.model_dim, args.test_a, 'deu_test_a_embed.pkl', 'deu_test_a_tag.pkl',
           sentence_length=args.sentence_length)
-get_input_esp(trained_model, args.model_dim, args.test_b, 'esp_test_b_embed.pkl', 'esp_test_b_tag.pkl',
+get_input_deu(trained_model, args.model_dim, args.test_b, 'deu_test_b_embed.pkl', 'deu_test_b_tag.pkl',
           sentence_length=args.sentence_length)
 
 
@@ -67,7 +67,7 @@ from model_new import *
 
 class arg:
     def __init__(self):
-        self.word_dim=306#300 + POS + Capital
+        self.word_dim=301#300 + POS + Capital
         self.sentence_length = 30 #decided by me
         self.class_size = 5 #Conll2003
         self.rnn_size = 256
@@ -75,7 +75,7 @@ class arg:
         self.batch_size = 128
         self.epoch = 100
         self.restore = None
-        self.model_name = 'Spanish_Original'
+        self.model_name = 'German_Original'
         
 args = arg()
 train(args)

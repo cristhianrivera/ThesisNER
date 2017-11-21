@@ -181,7 +181,7 @@ def get_input_deu(model, word_dim, input_file, output_embed, output_tag, sentenc
     sentence_length = 0
     print("max sentence length is %d" % max_sentence_length)
     for line in open(input_file):
-        if line in ['\n', '\r\n']:
+        if line in ['\n', '\r\n', ':   \n','  ADV O O\n']:
             for _ in range(max_sentence_length - sentence_length):
                 tag.append(np.array([0] * 5))
                 temp = np.array([0 for _ in range(word_dim + 1)])#important when no Chunk or Pos requiered
@@ -193,7 +193,7 @@ def get_input_deu(model, word_dim, input_file, output_embed, output_tag, sentenc
             word = []
             tag = []
         else:
-            assert (len(line.split()) == 4)
+            assert (len(line.split()) == 5)
             sentence_length += 1
             temp = model[line.split()[0]]
             assert len(temp) == word_dim, len(temp)
@@ -201,7 +201,7 @@ def get_input_deu(model, word_dim, input_file, output_embed, output_tag, sentenc
             #temp = np.append(temp, chunk(line.split()[2]))  # adding chunk embeddings
             temp = np.append(temp, capital(line.split()[0]))  # adding capital embedding
             word.append(temp)
-            t = line.split()[3]
+            t = line.split()[4]
             # Five classes 0-None,1-Person,2-Location,3-Organisation,4-Misc
             if t.endswith('PER'):
                 tag.append(np.array([1, 0, 0, 0, 0]))
@@ -236,7 +236,7 @@ def get_tags(input_file):
             if tag in tags:
                 continue
             else:
-               tags[tag] = tag
+               tags[tag] +=1
     return tags
 
 """

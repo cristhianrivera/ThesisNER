@@ -6,10 +6,10 @@ import argparse
 import pickle
 
 # for the embeddings
-setDir = '/home/IAIS/cjimenezri/ner-lstm/ner/embeddings/'
+#setDir = '/home/IAIS/cjimenezri/ner-lstm/ner/embeddings/'
 language = 'deu'
-#setDir = '/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm/embeddings/'
-max_trim_size = 25
+setDir = '/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm/embeddings/'
+max_trim_size = 30
     
 def get_train_data():
     emb = pickle.load(open(setDir + language + '_train_embed_' + str(max_trim_size) + '.pkl', 'rb'))
