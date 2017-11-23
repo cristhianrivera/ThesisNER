@@ -85,7 +85,7 @@ def get_input_eng(model, word_dim, input_file, output_embed, output_tag, sentenc
         else:
             assert (len(line.split()) == 4)
             sentence_length += 1
-            temp = model[line.split()[0]]
+            temp = model['en:' + line.split()[0]]
             assert len(temp) == word_dim
             #temp = np.append(temp, pos(line.split()[1]))  # adding pos embeddings
             #temp = np.append(temp, chunk(line.split()[2]))  # adding chunk embeddings

@@ -8,7 +8,7 @@ import pickle
 
 # for the embeddings
 setDir = '/home/IAIS/cjimenezri/ner-lstm/ner/embeddings/'
-language = 'esp'
+language = 'eng_combined'
 #setDir = '/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm/embeddings/'
 max_trim_size = 30
     
@@ -169,11 +169,11 @@ def train(args):
             saver.restore(sess, 'model_' + args.model_name + '.ckpt')
             print("model restored")
             
-        ff = open(args.model_name + '_' + str(args.sentence_length) + '_loss.txt', 'w')
+        ff = open('StatisticalNER/' + args.model_name + '_' + str(args.sentence_length) + '_loss.txt', 'w')
         
-        ff1 = open(args.model_name + '_' + str(args.sentence_length) + '_f1.txt', 'w')
-        fprecision = open(args.model_name + '_' + str(args.sentence_length) + '_precision.txt', 'w')
-        frecall = open(args.model_name + '_' + str(args.sentence_length) + '_recall.txt', 'w')
+        ff1 = open('StatisticalNER/' + args.model_name + '_' + str(args.sentence_length) + '_f1.txt', 'w')
+        fprecision = open('StatisticalNER/' + args.model_name + '_' + str(args.sentence_length) + '_precision.txt', 'w')
+        frecall = open('StatisticalNER/' + args.model_name + '_' + str(args.sentence_length) + '_recall.txt', 'w')
         
         
         for e in range(args.epoch):   
