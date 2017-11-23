@@ -7,9 +7,9 @@ import argparse
 import pickle
 
 # for the embeddings
-#setDir = '/home/IAIS/cjimenezri/ner-lstm/ner/embeddings/'
-language = 'deu'
-setDir = '/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm/embeddings/'
+setDir = '/home/IAIS/cjimenezri/ner-lstm/ner/embeddings/'
+language = 'eng'
+#setDir = '/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm/embeddings/'
 max_trim_size = 30
     
 def get_train_data():
@@ -80,17 +80,18 @@ class Model:
         
         weight, bias = self.weight_and_bias(2 * args.rnn_size, args.class_size)
         output = tf.reshape(output_end, [-1, 2 * args.rnn_size])
-        #prediction = tf.sigmoid( tf.matmul(output, weight) + bias)
-        prediction = tf.nn.softmax(tf.matmul(output, weight) + bias)
-        prediction = tf.reshape(prediction, [-1, args.sentence_length, args.class_size])
-        self.prediction = tf.clip_by_value(prediction,1e-6,1.0)
+        prediction = tf.nn.tanh( tf.matmul(output, weight) + bias)
+        prediction = tf.nn.softmax(prediction)
+        #prediction = tf.nn.softmax(tf.matmul(output, weight) + bias)
+        self.prediction = tf.reshape(prediction, [-1, args.sentence_length, args.class_size])
+        #self.prediction = tf.clip_by_value(prediction,1e-6,1.0)
         output_java = tf.identity(self.prediction, name = "output_java")
         self.loss = self.cost()
         
         #optimizer = tf.train.AdamOptimizer(0.0003)#RMSProp optimizer
         #self.train_op = optimizer.minimize(self.loss)
         
-        optimizer = tf.train.AdamOptimizer(0.0003)
+        optimizer = tf.train.AdamOptimizer(0.01)
         gvs = optimizer.compute_gradients(self.loss)
         capped_gvs = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in gvs]
         self.train_op = optimizer.apply_gradients(capped_gvs)
@@ -102,7 +103,7 @@ class Model:
         mask = tf.sign(tf.reduce_max(tf.abs(self.output_data), reduction_indices=2))
         cross_entropy *= mask
         cross_entropy = tf.reduce_sum(cross_entropy, reduction_indices=1)
-        cross_entropy /= tf.cast(self.length, tf.float32)
+        #cross_entropy /= tf.cast(self.length, tf.float32)
         
         return tf.reduce_mean(cross_entropy)
 
@@ -186,33 +187,49 @@ def train(args):
                 variables_names =[v.name for v in tf.trainable_variables()]
                 values = sess.run(variables_names)
                 
-                _ , t_loss = sess.run([model.train_op, model.loss], {model.input_data: train_inp[ptr:ptr + args.batch_size],
+                _ , t_loss, predi = sess.run([model.train_op, model.loss, model.prediction], 
+                                             {model.input_data: train_inp[ptr:ptr + args.batch_size],
                                           model.output_data: train_out[ptr:ptr + args.batch_size],
                                           model.dropout: 0.5})
                 """
                 
                 print(" maximum prediction value : " + str(np.amax(np.asarray(predi))))
                 print(" minimum prediction value : " + str(np.amin(np.asarray(predi))))
-                """
+                
                 print("\n ptr : " + str(ptr))
                 print("training loss: " + str(t_loss))
+                
+                """
                 
                 
                 
                 if str(t_loss) =='nan':
-                    print("------------------previous values------------------")
+                    fdebug = open('debug_german_problem.txt', 'w')
+                    print("\n------------------previous values------------------")
+                    
+                    fdebug.writelines("\n------------------previous values------------------")
+                    
                     for k,v in zip(variables_names, values):
+                        fdebug.writelines(str(k))
+                        fdebug.writelines(str(v))                        
                         print(k, v) 
                     
                     
-                    print ("---------------------nan values-------------------")
-                    
+                    print ("\n---------------------nan values-------------------")
+                    fdebug.writelines("\n---------------------nan values-------------------")
                     
                     values = sess.run(variables_names)
                     for k,v in zip(variables_names, values):
+                        fdebug.writelines(str(k))
+                        fdebug.writelines(str(v))                        
                         print(k, v)
+                        
+                    print ("\n---------------------prediction-------------------")
+                    fdebug.writelines("\n---------------------prediction-------------------")
+                    fdebug.writelines(str(predi))                        
+                    print(predi)
                     
-                    break
+                    return ptr
                     
                         
             if e % 10 == 0:
