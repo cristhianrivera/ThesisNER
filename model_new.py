@@ -8,7 +8,7 @@ import pickle
 
 # for the embeddings
 setDir = '/home/IAIS/cjimenezri/ner-lstm/ner/embeddings/'
-language = 'eng'
+language = 'esp'
 #setDir = '/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm/embeddings/'
 max_trim_size = 30
     
@@ -80,9 +80,9 @@ class Model:
         
         weight, bias = self.weight_and_bias(2 * args.rnn_size, args.class_size)
         output = tf.reshape(output_end, [-1, 2 * args.rnn_size])
-        prediction = tf.nn.tanh( tf.matmul(output, weight) + bias)
-        prediction = tf.nn.softmax(prediction)
-        #prediction = tf.nn.softmax(tf.matmul(output, weight) + bias)
+        #prediction = tf.nn.tanh( tf.matmul(output, weight) + bias)
+        #prediction = tf.nn.softmax(prediction)
+        prediction = tf.nn.softmax(tf.matmul(output, weight) + bias)
         self.prediction = tf.reshape(prediction, [-1, args.sentence_length, args.class_size])
         #self.prediction = tf.clip_by_value(prediction,1e-6,1.0)
         output_java = tf.identity(self.prediction, name = "output_java")
@@ -91,14 +91,14 @@ class Model:
         #optimizer = tf.train.AdamOptimizer(0.0003)#RMSProp optimizer
         #self.train_op = optimizer.minimize(self.loss)
         
-        optimizer = tf.train.AdamOptimizer(0.01)
+        optimizer = tf.train.AdamOptimizer(0.001)
         gvs = optimizer.compute_gradients(self.loss)
         capped_gvs = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in gvs]
         self.train_op = optimizer.apply_gradients(capped_gvs)
         
 
     def cost(self):
-        cross_entropy = self.output_data * tf.log(self.prediction)
+        cross_entropy = self.output_data * tf.log(self.prediction+ 1e-6)
         cross_entropy = -tf.reduce_sum(cross_entropy, reduction_indices=2)
         mask = tf.sign(tf.reduce_max(tf.abs(self.output_data), reduction_indices=2))
         cross_entropy *= mask
