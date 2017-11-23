@@ -183,6 +183,9 @@ def train(args):
                 #print(sum(np.asarray(train_out[ptr:ptr + args.batch_size])))
                 assert not np.any(np.isnan(train_inp[ptr:ptr + args.batch_size]))
                 
+                variables_names =[v.name for v in tf.trainable_variables()]
+                values = sess.run(variables_names)
+                
                 _ , t_loss = sess.run([model.train_op, model.loss], {model.input_data: train_inp[ptr:ptr + args.batch_size],
                                           model.output_data: train_out[ptr:ptr + args.batch_size],
                                           model.dropout: 0.5})
@@ -194,11 +197,21 @@ def train(args):
                 print("\n ptr : " + str(ptr))
                 print("training loss: " + str(t_loss))
                 
+                
+                
                 if str(t_loss) =='nan':
-                    variables_names =[v.name for v in tf.trainable_variables()]
+                    print("------------------previous values------------------")
+                    for k,v in zip(variables_names, values):
+                        print(k, v) 
+                    
+                    
+                    print ("---------------------nan values-------------------")
+                    
+                    
                     values = sess.run(variables_names)
                     for k,v in zip(variables_names, values):
                         print(k, v)
+                    
                     break
                     
                         
