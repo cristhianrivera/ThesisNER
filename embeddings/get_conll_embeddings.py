@@ -130,7 +130,7 @@ def get_input_esp(model, word_dim, input_file, output_embed, output_tag, sentenc
             #line = line.decode('latin-1')
             for _ in range(max_sentence_length - sentence_length):
                 tag.append(np.array([0] * 5))
-                temp = np.array([0 for _ in range(word_dim + 6)])#important when no Chunk or Pos requiered
+                temp = np.array([0 for _ in range(word_dim + 1)])#important when no Chunk or Pos requiered
                 word.append(temp)
             sentence.append(word)
             sentence_tag.append(np.array(tag))
@@ -139,15 +139,15 @@ def get_input_esp(model, word_dim, input_file, output_embed, output_tag, sentenc
             tag = []
         else:
             #line = line.decode('latin-1')
-            assert (len(line.split()) == 3)# this is for spanish
+            assert (len(line.split()) == 2)# this is for spanish
             sentence_length += 1
             temp = model[line.split()[0]]
             assert len(temp) == word_dim
-            temp = np.append(temp, pos(line.split()[1]))  # adding pos embeddings
+            #temp = np.append(temp, pos(line.split()[1]))  # adding pos embeddings
             #temp = np.append(temp, chunk(line.split()[2]))  # adding chunk embeddings
             temp = np.append(temp, capital(line.split()[0]))  # adding capital embedding
             word.append(temp)
-            t = line.split()[2]
+            t = line.split()[1]
             # Five classes 0-None,1-Person,2-Location,3-Organisation,4-Misc
             if t.endswith('PER'):
                 tag.append(np.array([1, 0, 0, 0, 0]))

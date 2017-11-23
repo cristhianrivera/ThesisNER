@@ -30,7 +30,7 @@ class WordVec:
                                        batch_words=args.batch_size, min_count=1, max_vocab_size=args.vocab_size)
         else:
             print('restoring model ')
-            self.wvec_model = KeyedVectors.load_word2vec_format(args.restore, binary=True)
+            self.wvec_model = KeyedVectors.load_word2vec_format(args.restore, binary=False)
         self.rand_model = RandomVec(args.dimension)
 
     def __getitem__(self, word):
@@ -60,12 +60,12 @@ if __name__ == '__main__':
 import os
 class arg:
     def __init__(self):
-        self.restore = 'german.model'
+        self.restore = 'wiki.de.vec.txt'
         self.dimension = 300
 
 os.chdir('/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/W2V')
 args = arg()
 model = WordVec(args)
 print('saving model')
-pkl.dump(model, open('deu_wordvec_model_' + str(args.dimension) + '.pkl', 'wb'))
+pkl.dump(model, open('deu1_wordvec_model_' + str(args.dimension) + '.pkl', 'wb'))
 """

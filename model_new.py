@@ -1,5 +1,6 @@
 from __future__ import print_function
 from tensorflow.python.saved_model import builder as saved_model_builder
+from sklearn.utils import shuffle
 import tensorflow as tf
 import numpy as np
 import argparse
@@ -14,7 +15,7 @@ max_trim_size = 30
 def get_train_data():
     emb = pickle.load(open(setDir + language + '_train_embed_' + str(max_trim_size) + '.pkl', 'rb'))
     tag = pickle.load(open(setDir + language + '_train_tag_' + str(max_trim_size) + '.pkl', 'rb'))
-    print('train ' + str(max_trim_size) + ' data loaded')
+    print('train '+ language + ' ' + str(max_trim_size) + ' data loaded')
     return emb, tag
 
 
@@ -57,9 +58,10 @@ class Model:
                                                             bw_cell,
                                                             self.input_data,
                                                             dtype=tf.float32, 
-                                                            sequence_length = self.length,
-                                                            parallel_iterations = 128)  
+                                                            sequence_length = self.length)
+                                                            #parallel_iterations = 128)  
         output = tf.concat(outputs,2)
+        
         with tf.variable_scope("layer_2"):
             fw_cell_2 = tf.nn.rnn_cell.MultiRNNCell([lstm_rnn_cell(args.rnn_size, dropout = self.dropout) for _ in range(args.num_layers)], 
                                                    state_is_tuple = True)
@@ -70,23 +72,29 @@ class Model:
                                             bw_cell_2,
                                             output,
                                             dtype = tf.float32, 
-                                            sequence_length = self.length,
-                                            parallel_iterations = 128)  
+                                            sequence_length = self.length)
+                                            #parallel_iterations = 128)  
         output_end = tf.concat(outputs_2,2)
+        
                    
         
         weight, bias = self.weight_and_bias(2 * args.rnn_size, args.class_size)
         output = tf.reshape(output_end, [-1, 2 * args.rnn_size])
+        #prediction = tf.sigmoid( tf.matmul(output, weight) + bias)
         prediction = tf.nn.softmax(tf.matmul(output, weight) + bias)
-        #output_java = tf.identity(prediction, name = "output_java")
-        self.prediction = tf.reshape(prediction, [-1, args.sentence_length, args.class_size])
+        prediction = tf.reshape(prediction, [-1, args.sentence_length, args.class_size])
+        self.prediction = tf.clip_by_value(prediction,1e-6,1.0)
         output_java = tf.identity(self.prediction, name = "output_java")
         self.loss = self.cost()
-        #optimizer = tf.train.AdamOptimizer(0.003)#RMSProp optimizer
-        optimizer = tf.train.RMSPropOptimizer(0.003)
-        tvars = tf.trainable_variables()
-        grads, _ = tf.clip_by_global_norm(tf.gradients(self.loss, tvars), 10)
-        self.train_op = optimizer.apply_gradients(zip(grads, tvars))
+        
+        #optimizer = tf.train.AdamOptimizer(0.0003)#RMSProp optimizer
+        #self.train_op = optimizer.minimize(self.loss)
+        
+        optimizer = tf.train.AdamOptimizer(0.0003)
+        gvs = optimizer.compute_gradients(self.loss)
+        capped_gvs = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in gvs]
+        self.train_op = optimizer.apply_gradients(capped_gvs)
+        
 
     def cost(self):
         cross_entropy = self.output_data * tf.log(self.prediction)
@@ -95,6 +103,7 @@ class Model:
         cross_entropy *= mask
         cross_entropy = tf.reduce_sum(cross_entropy, reduction_indices=1)
         cross_entropy /= tf.cast(self.length, tf.float32)
+        
         return tf.reduce_mean(cross_entropy)
 
     @staticmethod
@@ -145,7 +154,9 @@ def train(args):
     train_inp, train_out = get_train_data()
     test_a_inp, test_a_out = get_test_a_data()
     test_b_inp, test_b_out = get_test_b_data()
+    train_inp, train_out = shuffle(train_inp, train_out)
     model = Model(args)
+    train_loss = 0
     maximum = 0
     #builder = tf.saved_model.builder.SavedModelBuilder("./model")
     with tf.Session() as sess:
@@ -164,26 +175,47 @@ def train(args):
         frecall = open(args.model_name + '_' + str(args.sentence_length) + '_recall.txt', 'w')
         
         
-        for e in range(args.epoch):            
+        for e in range(args.epoch):   
+            print ("Len of train: " + str(len(train_inp)))
             for ptr in range(0, len(train_inp), args.batch_size):
-
-                sess.run(model.train_op, {model.input_data: train_inp[ptr:ptr + args.batch_size],
-                                          model.output_data: train_out[ptr:ptr + args.batch_size],
-                                          model.dropout: float(0.5)})
+            #for ptr in range(0, 100, args.batch_size):
+                #print(sum(np.asarray(train_inp[ptr:ptr + args.batch_size])))
+                #print(sum(np.asarray(train_out[ptr:ptr + args.batch_size])))
+                assert not np.any(np.isnan(train_inp[ptr:ptr + args.batch_size]))
                 
-            
+                _ , t_loss = sess.run([model.train_op, model.loss], {model.input_data: train_inp[ptr:ptr + args.batch_size],
+                                          model.output_data: train_out[ptr:ptr + args.batch_size],
+                                          model.dropout: 0.5})
+                """
+                
+                print(" maximum prediction value : " + str(np.amax(np.asarray(predi))))
+                print(" minimum prediction value : " + str(np.amin(np.asarray(predi))))
+                """
+                print("\n ptr : " + str(ptr))
+                print("training loss: " + str(t_loss))
+                
+                if str(t_loss) =='nan':
+                    variables_names =[v.name for v in tf.trainable_variables()]
+                    values = sess.run(variables_names)
+                    for k,v in zip(variables_names, values):
+                        print(k, v)
+                    break
+                    
+                        
             if e % 10 == 0:
                 save_path = saver.save(sess, 'model_' + args.model_name + '.ckpt')
                 print("model saved in file: %s" % save_path)
+                
             pred, length , loss = sess.run([model.prediction, model.length, model.loss], {model.input_data: test_a_inp,
                                                                        model.output_data: test_a_out,
-                                                                       model.dropout: float(1.0) })
+                                                                       model.dropout: 1.0 })
             
             ff.writelines("%d \t %f" % (e ,loss))
-            
-            print("loss = %s" % loss)
+                
+            print("loss = %.4f" % loss)
             print("epoch %d:" % e)
             print('test_a score:')
+                            
             m = f1(args, pred, test_a_out, length)
             
             fprecision.writelines("%d \t %f" % (e ,m[1]))
@@ -199,6 +231,9 @@ def train(args):
                                                                            model.dropout: float(1.0) })
                 print("test_b score:")
                 f1(args, pred, test_b_out, length)
+
+            
+        
         ff.close()  
 
         fprecision.close()
