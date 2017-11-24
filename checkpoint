@@ -1,3 +1,3 @@
-model_checkpoint_path: "model_English_noPosNoChunk_MultiCCA.ckpt"
-all_model_checkpoint_paths: "model_English_noPosNoChunk_MultiCCA_max.ckpt"
-all_model_checkpoint_paths: "model_English_noPosNoChunk_MultiCCA.ckpt"
+model_checkpoint_path: "model_Ensligh_30_noPosNoChunk_MultiSkip512_max.ckpt"
+all_model_checkpoint_paths: "model_Ensligh_30_noPosNoChunk_MultiSkip512.ckpt"
+all_model_checkpoint_paths: "model_Ensligh_30_noPosNoChunk_MultiSkip512_max.ckpt"

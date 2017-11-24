@@ -9,7 +9,6 @@ def remove_crap(input_file):
     start_docs = 0
     l = list()
     for line in lines:
-        #line = line.decode('latin-1')
         if "-DOCSTART-" in line:
             start_docs = start_docs +1
             pass

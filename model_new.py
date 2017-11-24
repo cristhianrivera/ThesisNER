@@ -8,25 +8,25 @@ import pickle
 
 # for the embeddings
 setDir = '/home/IAIS/cjimenezri/ner-lstm/ner/embeddings/'
-language = 'eng_combined'
+#language = 'esp_combined'
 #setDir = '/Users/Cristhian/Documents/OneDrive/Documentos/Personal/MSc/Thesis/Fraunhofer/ner-lstm/embeddings/'
 max_trim_size = 30
     
-def get_train_data():
+def get_train_data(language):
     emb = pickle.load(open(setDir + language + '_train_embed_' + str(max_trim_size) + '.pkl', 'rb'))
     tag = pickle.load(open(setDir + language + '_train_tag_' + str(max_trim_size) + '.pkl', 'rb'))
     print('train '+ language + ' ' + str(max_trim_size) + ' data loaded')
     return emb, tag
 
 
-def get_test_a_data():
+def get_test_a_data(language):
     emb = pickle.load(open(setDir + language + '_test_a_embed_' + str(max_trim_size) + '.pkl', 'rb'))
     tag = pickle.load(open(setDir + language + '_test_a_tag_' + str(max_trim_size) + '.pkl', 'rb'))
     print('test_a ' + str(max_trim_size) + ' data loaded')
     return emb, tag
 
 
-def get_test_b_data():
+def get_test_b_data(language):
     emb = pickle.load(open(setDir + language + '_test_b_embed_' + str(max_trim_size) + '.pkl', 'rb'))
     tag = pickle.load(open(setDir + language + '_test_b_tag_' + str(max_trim_size) + '.pkl', 'rb'))
     print('test_b ' + str(max_trim_size) + ' data loaded')
@@ -91,7 +91,7 @@ class Model:
         #optimizer = tf.train.AdamOptimizer(0.0003)#RMSProp optimizer
         #self.train_op = optimizer.minimize(self.loss)
         
-        optimizer = tf.train.AdamOptimizer(0.001)
+        optimizer = tf.train.AdamOptimizer(0.0005)
         gvs = optimizer.compute_gradients(self.loss)
         capped_gvs = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in gvs]
         self.train_op = optimizer.apply_gradients(capped_gvs)
@@ -145,16 +145,58 @@ def f1(args, prediction, target, length):
         precision.append(tp[i] * 1.0 / (tp[i] + fp[i]))
         recall.append(tp[i] * 1.0 / (tp[i] + fn[i]))
         fscore.append(2.0 * precision[i] * recall[i] / (precision[i] + recall[i]))
-    print ("precision ", precision)
-    print ("recall ", recall)
+    #print ("precision ", precision)
+    #print ("recall ", recall)
     print ("f1 score ", fscore)
     return fscore[args.class_size],precision[args.class_size],recall[args.class_size]
 
 
 def train(args):
-    train_inp, train_out = get_train_data()
-    test_a_inp, test_a_out = get_test_a_data()
-    test_b_inp, test_b_out = get_test_b_data()
+    train_inp_deu, train_out_deu = get_train_data('deu_combined')
+    test_a_inp_deu, test_a_out_deu = get_test_a_data('deu_combined')
+    test_b_inp_deu, test_b_out_deu = get_test_b_data('deu_combined')
+    
+    train_inp_esp, train_out_esp = get_train_data('esp_combined')
+    test_a_inp_esp, test_a_out_esp = get_test_a_data('esp_combined')
+    test_b_inp_esp, test_b_out_esp = get_test_b_data('esp_combined')
+    
+    train_inp_eng, train_out_eng = get_train_data('eng_combined')
+    test_a_inp_eng, test_a_out_eng = get_test_a_data('eng_combined')
+    test_b_inp_eng, test_b_out_eng = get_test_b_data('eng_combined')
+    
+   
+
+
+    train_inp_deu = np.asarray(train_inp_deu)
+    train_out_deu = np.asarray(train_deu_deu)
+    train_inp_eng = np.asarray(train_inp_eng)
+    train_out_eng = np.asarray(train_deu_eng)
+    train_inp_esp = np.asarray(train_inp_esp)
+    train_out_esp = np.asarray(train_deu_esp)
+    
+    test_a_inp_deu = np.asarray(test_a_inp_deu)
+    test_a_out_deu = np.asarray(test_a_out_deu)
+    test_a_inp_eng = np.asarray(test_a_inp_eng)
+    test_a_out_eng = np.asarray(test_a_out_eng)
+    test_a_inp_esp = np.asarray(test_a_inp_esp)
+    test_a_out_esp = np.asarray(test_a_out_esp)
+    
+    test_b_inp_deu = np.asarray(test_b_inp_deu)
+    test_b_out_deu = np.asarray(test_b_out_deu)
+    test_b_inp_eng = np.asarray(test_b_inp_eng)
+    test_b_out_eng = np.asarray(test_b_out_eng)
+    test_b_inp_esp = np.asarray(test_b_inp_esp)
+    test_b_out_esp = np.asarray(test_b_out_esp)
+    
+    train_inp = np.concatenate((train_inp_deu, train_inp_eng, train_inp_esp), axis = 0)
+    train_out = np.concatenate((train_out_deu, train_out_eng, train_out_esp), axis = 0)
+    
+    test_a_inp = np.concatenate((test_a_inp_deu, test_a_inp_eng, test_a_inp_esp), axis = 0)
+    test_a_out = np.concatenate((test_a_out_deu, test_a_out_eng, test_a_out_esp), axis = 0)
+    
+    test_b_inp = np.concatenate((test_b_inp_deu, test_b_inp_eng, test_b_inp_esp), axis = 0)
+    test_b_out = np.concatenate((test_b_out_deu, test_b_out_eng, test_b_out_esp), axis = 0)
+    
     train_inp, train_out = shuffle(train_inp, train_out)
     model = Model(args)
     train_loss = 0
@@ -276,18 +318,68 @@ def train(args):
 
 
 def predict(args):
-    test_a_inp, test_a_out = get_test_a_data()
-    test_b_inp, test_b_out = get_test_b_data()
+    train_inp, train_out = get_train_data('deu_combined')
+    test_a_inp, test_a_out = get_test_a_data('deu_combined')
+    test_b_inp, test_b_out = get_test_b_data('deu_combined')
+    
+    train_inp_esp, train_out_esp = get_train_data('esp_combined')
+    test_a_inp_esp, test_a_out_esp = get_test_a_data('esp_combined')
+    test_b_inp_esp, test_b_out_esp = get_test_b_data('esp_combined')
+    
+    train_inp_eng, train_out_eng = get_train_data('eng_combined')
+    test_a_inp_eng, test_a_out_eng = get_test_a_data('eng_combined')
+    test_b_inp_eng, test_b_out_eng = get_test_b_data('eng_combined')
+    
+    """
+    train_inp = list()
+    train_out = list() 
+    
+    test_a_inp = list()
+    test_a_out = list()
+    
+    test_b_inp = list()
+    test_b_out = list()
+    """
+    
+    #train_inp.append(train_inp_deu)
+    train_inp.append(train_inp_esp)
+    train_inp.append(train_inp_eng)
+    
+    #train_out.append(train_out_deu)
+    train_out.append(train_out_esp)
+    train_out.append(train_out_eng)
+    
+    #test_a_inp.append(test_a_inp_deu)
+    test_a_inp.append(test_a_inp_esp)
+    test_a_inp.append(test_a_inp_eng)
+    
+    #test_a_out.append(test_a_out_deu)
+    test_a_out.append(test_a_out_esp)
+    test_a_out.append(test_a_out_eng)
+    
+    #test_b_inp.append(test_b_inp_deu)
+    test_b_inp.append(test_b_inp_esp)
+    test_b_inp.append(test_b_inp_eng)
+    
+    #test_b_out.append(test_b_out_deu)
+    test_b_out.append(test_b_out_esp)
+    test_b_out.append(test_b_out_eng)
+    
+    print(str(np.asarray(train_inp).shape))
+    
+    
     model = Model(args)
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         #sess.run(tf.initialize_all_variables())
         
         saver = tf.train.Saver()
-        saver.restore(sess, 'model_max.ckpt')
+        saver.restore(sess, args.restore + '.ckpt')
         print("model restored")
-        pred, length , loss = sess.run([model.prediction, model.length, model.loss], {model.input_data: test_a_inp,
-                                                                       model.output_data: test_a_out,
-                                                                       model.dropout: 1.0 })
-        m = f1(args, pred, test_a_out, length)
+        for ptr in range(0, len(train_inp), args.batch_size):
+            pred, length , loss = sess.run([model.prediction, model.length, model.loss], 
+                                           {model.input_data: train_inp[ptr:ptr + args.batch_size],
+                                            model.output_data: train_out[ptr:ptr + args.batch_size],
+                                           model.dropout: 1 })
+            m = f1(args, pred, train_out[ptr:ptr + args.batch_size], length)
 

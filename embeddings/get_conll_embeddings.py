@@ -141,7 +141,7 @@ def get_input_esp(model, word_dim, input_file, output_embed, output_tag, sentenc
             #line = line.decode('latin-1')
             assert (len(line.split()) == 2)# this is for spanish
             sentence_length += 1
-            temp = model[line.split()[0]]
+            temp = model['es:' + line.split()[0]]
             assert len(temp) == word_dim
             #temp = np.append(temp, pos(line.split()[1]))  # adding pos embeddings
             #temp = np.append(temp, chunk(line.split()[2]))  # adding chunk embeddings
@@ -193,10 +193,11 @@ def get_input_deu(model, word_dim, input_file, output_embed, output_tag, sentenc
             word = []
             tag = []
         else:
-            assert (len(line.split()) == 5)
+            print(len(line.decode('latin-1').split()))
+            assert (len(line.decode('latin-1').split()) == 5), print('de:' + line.split()[0])
             sentence_length += 1
-            temp = model[line.split()[0]]
-            assert len(temp) == word_dim, len(temp)
+            temp = model['de:' + line.split()[0]]
+            assert len(temp) == word_dim, temp
             #temp = np.append(temp, pos(line.split()[1]))  # adding pos embeddings
             #temp = np.append(temp, chunk(line.split()[2]))  # adding chunk embeddings
             temp = np.append(temp, capital(line.split()[0]))  # adding capital embedding
