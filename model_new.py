@@ -58,8 +58,8 @@ class Model:
                                                             bw_cell,
                                                             self.input_data,
                                                             dtype=tf.float32, 
-                                                            sequence_length = self.length)
-                                                            #parallel_iterations = 128)  
+                                                            sequence_length = self.length,
+                                                            parallel_iterations = 128)  
         output = tf.concat(outputs,2)
         
         with tf.variable_scope("layer_2"):
@@ -72,8 +72,8 @@ class Model:
                                             bw_cell_2,
                                             output,
                                             dtype = tf.float32, 
-                                            sequence_length = self.length)
-                                            #parallel_iterations = 128)  
+                                            sequence_length = self.length,
+                                            parallel_iterations = 128)  
         output_end = tf.concat(outputs_2,2)
         
                    
@@ -87,10 +87,6 @@ class Model:
         #self.prediction = tf.clip_by_value(prediction,1e-6,1.0)
         output_java = tf.identity(self.prediction, name = "output_java")
         self.loss = self.cost()
-        
-        #optimizer = tf.train.AdamOptimizer(0.0003)#RMSProp optimizer
-        #self.train_op = optimizer.minimize(self.loss)
-        
         optimizer = tf.train.AdamOptimizer(0.0005)
         gvs = optimizer.compute_gradients(self.loss)
         capped_gvs = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in gvs]
@@ -152,21 +148,19 @@ def f1(args, prediction, target, length):
 
 
 def train(args):
-    train_inp_deu, train_out_deu = get_train_data('deu_combined')
-    test_a_inp_deu, test_a_out_deu = get_test_a_data('deu_combined')
-    test_b_inp_deu, test_b_out_deu = get_test_b_data('deu_combined')
+    train_inp_eng, train_out_eng = get_train_data('eng_combined')
+    test_a_inp_eng, test_a_out_eng = get_test_a_data('eng_combined')
+    test_b_inp_eng, test_b_out_eng = get_test_b_data('eng_combined')
     
     train_inp_esp, train_out_esp = get_train_data('esp_combined')
     test_a_inp_esp, test_a_out_esp = get_test_a_data('esp_combined')
     test_b_inp_esp, test_b_out_esp = get_test_b_data('esp_combined')
     
-    train_inp_eng, train_out_eng = get_train_data('eng_combined')
-    test_a_inp_eng, test_a_out_eng = get_test_a_data('eng_combined')
-    test_b_inp_eng, test_b_out_eng = get_test_b_data('eng_combined')
     
-   
-
-
+    train_inp_deu, train_out_deu = get_train_data('deu_combined')
+    test_a_inp_deu, test_a_out_deu = get_test_a_data('deu_combined')
+    test_b_inp_deu, test_b_out_deu = get_test_b_data('deu_combined')
+    """
     train_inp_deu = np.asarray(train_inp_deu)
     train_out_deu = np.asarray(train_out_deu)
     train_inp_eng = np.asarray(train_inp_eng)
@@ -196,8 +190,20 @@ def train(args):
     
     test_b_inp = np.concatenate((test_b_inp_deu, test_b_inp_eng, test_b_inp_esp), axis = 0)
     test_b_out = np.concatenate((test_b_out_deu, test_b_out_eng, test_b_out_esp), axis = 0)
+    """
+    train_inp = np.concatenate((train_inp_eng, train_inp_esp, train_inp_deu), axis = 0)
+    train_out = np.concatenate((train_out_eng, train_out_esp, train_out_deu), axis = 0)
+    
+    test_a_inp = np.concatenate((test_a_inp_eng, test_a_inp_esp, test_a_inp_deu), axis = 0)
+    test_a_out = np.concatenate((test_a_out_eng, test_a_out_esp, test_a_out_deu), axis = 0)
+    
+    test_b_inp = np.concatenate((test_b_inp_eng, test_b_inp_esp, test_b_inp_deu), axis = 0)
+    test_b_out = np.concatenate((test_b_out_eng, test_b_out_esp, test_b_out_deu), axis = 0)
     
     train_inp, train_out = shuffle(train_inp, train_out)
+    test_a_inp, test_a_out = shuffle(test_a_inp, test_a_out)
+    test_b_inp, test_b_out = shuffle(test_b_inp, test_b_out)
+    
     model = Model(args)
     train_loss = 0
     maximum = 0
@@ -221,61 +227,17 @@ def train(args):
         for e in range(args.epoch):   
             print ("Len of train: " + str(len(train_inp)))
             for ptr in range(0, len(train_inp), args.batch_size):
-            #for ptr in range(0, 100, args.batch_size):
-                #print(sum(np.asarray(train_inp[ptr:ptr + args.batch_size])))
-                #print(sum(np.asarray(train_out[ptr:ptr + args.batch_size])))
+
                 assert not np.any(np.isnan(train_inp[ptr:ptr + args.batch_size]))
-                
-                variables_names =[v.name for v in tf.trainable_variables()]
-                values = sess.run(variables_names)
                 
                 _ , t_loss, predi = sess.run([model.train_op, model.loss, model.prediction], 
                                              {model.input_data: train_inp[ptr:ptr + args.batch_size],
                                           model.output_data: train_out[ptr:ptr + args.batch_size],
                                           model.dropout: 0.5})
-                """
-                
-                print(" maximum prediction value : " + str(np.amax(np.asarray(predi))))
-                print(" minimum prediction value : " + str(np.amin(np.asarray(predi))))
-                
-                print("\n ptr : " + str(ptr))
-                print("training loss: " + str(t_loss))
-                
-                """
-                
-                
-                
-                if str(t_loss) =='nan':
-                    fdebug = open('debug_german_problem.txt', 'w')
-                    print("\n------------------previous values------------------")
-                    
-                    fdebug.writelines("\n------------------previous values------------------")
-                    
-                    for k,v in zip(variables_names, values):
-                        fdebug.writelines(str(k))
-                        fdebug.writelines(str(v))                        
-                        print(k, v) 
-                    
-                    
-                    print ("\n---------------------nan values-------------------")
-                    fdebug.writelines("\n---------------------nan values-------------------")
-                    
-                    values = sess.run(variables_names)
-                    for k,v in zip(variables_names, values):
-                        fdebug.writelines(str(k))
-                        fdebug.writelines(str(v))                        
-                        print(k, v)
-                        
-                    print ("\n---------------------prediction-------------------")
-                    fdebug.writelines("\n---------------------prediction-------------------")
-                    fdebug.writelines(str(predi))                        
-                    print(predi)
-                    
-                    return ptr
                     
                         
             if e % 10 == 0:
-                save_path = saver.save(sess, 'model_' + args.model_name + '.ckpt')
+                save_path = saver.save(sess, 'model_' + args.model_name + "_" + str(e) + '.ckpt')
                 print("model saved in file: %s" % save_path)
                 
             pred, length , loss = sess.run([model.prediction, model.length, model.loss], {model.input_data: test_a_inp,
@@ -318,64 +280,59 @@ def train(args):
 
 
 def predict(args):
-    train_inp, train_out = get_train_data('deu_combined')
-    test_a_inp, test_a_out = get_test_a_data('deu_combined')
-    test_b_inp, test_b_out = get_test_b_data('deu_combined')
+    train_inp_eng, train_out_eng = get_train_data('eng_combined')
+    test_a_inp_eng, test_a_out_eng = get_test_a_data('eng_combined')
+    test_b_inp_eng, test_b_out_eng = get_test_b_data('eng_combined')
     
     train_inp_esp, train_out_esp = get_train_data('esp_combined')
     test_a_inp_esp, test_a_out_esp = get_test_a_data('esp_combined')
     test_b_inp_esp, test_b_out_esp = get_test_b_data('esp_combined')
     
-    train_inp_eng, train_out_eng = get_train_data('eng_combined')
-    test_a_inp_eng, test_a_out_eng = get_test_a_data('eng_combined')
-    test_b_inp_eng, test_b_out_eng = get_test_b_data('eng_combined')
+    train_inp_deu, train_out_deu = get_train_data('deu_combined')
+    test_a_inp_deu, test_a_out_deu = get_test_a_data('deu_combined')
+    test_b_inp_deu, test_b_out_deu = get_test_b_data('deu_combined')
+
+    train_inp = np.concatenate((train_inp_eng, train_inp_esp, train_inp_deu), axis = 0)
+    train_out = np.concatenate((train_out_eng, train_out_esp, train_out_deu), axis = 0)
     
-    """
-    train_inp = list()
-    train_out = list() 
+    test_a_inp = np.concatenate((test_a_inp_eng, test_a_inp_esp, test_a_inp_deu), axis = 0)
+    test_a_out = np.concatenate((test_a_out_eng, test_a_out_esp, test_a_out_deu), axis = 0)
     
-    test_a_inp = list()
-    test_a_out = list()
+    test_b_inp = np.concatenate((test_b_inp_eng, test_b_inp_esp, test_b_inp_deu), axis = 0)
+    test_b_out = np.concatenate((test_b_out_eng, test_b_out_esp, test_b_out_deu), axis = 0)
     
-    test_b_inp = list()
-    test_b_out = list()
-    """
-    
-    #train_inp.append(train_inp_deu)
-    train_inp.append(train_inp_esp)
-    train_inp.append(train_inp_eng)
-    
-    #train_out.append(train_out_deu)
-    train_out.append(train_out_esp)
-    train_out.append(train_out_eng)
-    
-    #test_a_inp.append(test_a_inp_deu)
-    test_a_inp.append(test_a_inp_esp)
-    test_a_inp.append(test_a_inp_eng)
-    
-    #test_a_out.append(test_a_out_deu)
-    test_a_out.append(test_a_out_esp)
-    test_a_out.append(test_a_out_eng)
-    
-    #test_b_inp.append(test_b_inp_deu)
-    test_b_inp.append(test_b_inp_esp)
-    test_b_inp.append(test_b_inp_eng)
-    
-    #test_b_out.append(test_b_out_deu)
-    test_b_out.append(test_b_out_esp)
-    test_b_out.append(test_b_out_eng)
-    
-    print(str(np.asarray(train_inp).shape))
-    
+    train_inp, train_out = shuffle(train_inp, train_out)
+    test_a_inp, test_a_out = shuffle(test_a_inp, test_a_out)
+    test_b_inp, test_b_out = shuffle(test_b_inp, test_b_out)
+
+    print ("Len of train: " + str(len(train_inp)))
+    print ("Len of test a: " + str(len(test_a_inp)))
+    print ("Len of test b: " + str(len(test_b_inp)))
     
     model = Model(args)
+    
     with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
-        #sess.run(tf.initialize_all_variables())
-        
+       
         saver = tf.train.Saver()
-        saver.restore(sess, args.restore + '.ckpt')
+        saver.restore(sess, 'model_All_30_CCA512_max.ckpt')
         print("model restored")
+        
+        print ('\n --------- test a data ------------')
+        pred, length , loss = sess.run([model.prediction, model.length, model.loss], 
+                                           {model.input_data: test_a_inp,
+                                            model.output_data: test_a_out,
+                                           model.dropout: 1 })
+        m = f1(args, pred, test_a_out, length)
+        
+        print ('\n --------- test b data ------------')
+        pred, length , loss = sess.run([model.prediction, model.length, model.loss], 
+                                           {model.input_data: test_b_inp,
+                                            model.output_data: test_b_out,
+                                           model.dropout: 1 })
+        m = f1(args, pred, test_b_out, length)
+        
+        
+        print ('\n --------- training data ------------')
         for ptr in range(0, len(train_inp), args.batch_size):
             pred, length , loss = sess.run([model.prediction, model.length, model.loss], 
                                            {model.input_data: train_inp[ptr:ptr + args.batch_size],
