@@ -168,11 +168,11 @@ def train(args):
 
 
     train_inp_deu = np.asarray(train_inp_deu)
-    train_out_deu = np.asarray(train_deu_deu)
+    train_out_deu = np.asarray(train_out_deu)
     train_inp_eng = np.asarray(train_inp_eng)
-    train_out_eng = np.asarray(train_deu_eng)
+    train_out_eng = np.asarray(train_out_eng)
     train_inp_esp = np.asarray(train_inp_esp)
-    train_out_esp = np.asarray(train_deu_esp)
+    train_out_esp = np.asarray(train_out_esp)
     
     test_a_inp_deu = np.asarray(test_a_inp_deu)
     test_a_out_deu = np.asarray(test_a_out_deu)
