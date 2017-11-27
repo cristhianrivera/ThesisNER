@@ -280,6 +280,11 @@ def train(args):
 
 
 def predict(args):
+    train_inp, train_out = get_train_data('deu_combined')
+    test_a_inp, test_a_out = get_test_a_data('deu_combined')
+    test_b_inp, test_b_out = get_test_b_data('deu_combined')
+    
+    """
     train_inp_eng, train_out_eng = get_train_data('eng_combined')
     test_a_inp_eng, test_a_out_eng = get_test_a_data('eng_combined')
     test_b_inp_eng, test_b_out_eng = get_test_b_data('eng_combined')
@@ -304,7 +309,11 @@ def predict(args):
     train_inp, train_out = shuffle(train_inp, train_out)
     test_a_inp, test_a_out = shuffle(test_a_inp, test_a_out)
     test_b_inp, test_b_out = shuffle(test_b_inp, test_b_out)
-
+    """
+    train_inp, train_out = shuffle(train_inp, train_out)
+    test_a_inp, test_a_out = shuffle(test_a_inp, test_a_out)
+    test_b_inp, test_b_out = shuffle(test_b_inp, test_b_out)
+    
     print ("Len of train: " + str(len(train_inp)))
     print ("Len of test a: " + str(len(test_a_inp)))
     print ("Len of test b: " + str(len(test_b_inp)))
