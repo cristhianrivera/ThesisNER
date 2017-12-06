@@ -148,6 +148,7 @@ def f1(args, prediction, target, length):
 
 
 def train(args):
+    
     train_inp_eng, train_out_eng = get_train_data('eng_combined')
     test_a_inp_eng, test_a_out_eng = get_test_a_data('eng_combined')
     test_b_inp_eng, test_b_out_eng = get_test_b_data('eng_combined')
@@ -155,12 +156,11 @@ def train(args):
     train_inp_esp, train_out_esp = get_train_data('esp_combined')
     test_a_inp_esp, test_a_out_esp = get_test_a_data('esp_combined')
     test_b_inp_esp, test_b_out_esp = get_test_b_data('esp_combined')
-    
-    
+        
     train_inp_deu, train_out_deu = get_train_data('deu_combined')
     test_a_inp_deu, test_a_out_deu = get_test_a_data('deu_combined')
     test_b_inp_deu, test_b_out_deu = get_test_b_data('deu_combined')
-    """
+    
     train_inp_deu = np.asarray(train_inp_deu)
     train_out_deu = np.asarray(train_out_deu)
     train_inp_eng = np.asarray(train_inp_eng)
@@ -182,23 +182,14 @@ def train(args):
     test_b_inp_esp = np.asarray(test_b_inp_esp)
     test_b_out_esp = np.asarray(test_b_out_esp)
     
-    train_inp = np.concatenate((train_inp_deu, train_inp_eng, train_inp_esp), axis = 0)
-    train_out = np.concatenate((train_out_deu, train_out_eng, train_out_esp), axis = 0)
+    train_inp = np.concatenate((train_inp_esp, train_inp_deu, train_inp_eng), axis = 0)
+    train_out = np.concatenate((train_out_esp, train_out_deu, train_out_eng), axis = 0)
     
-    test_a_inp = np.concatenate((test_a_inp_deu, test_a_inp_eng, test_a_inp_esp), axis = 0)
-    test_a_out = np.concatenate((test_a_out_deu, test_a_out_eng, test_a_out_esp), axis = 0)
+    test_a_inp = np.concatenate((test_a_inp_esp, test_a_inp_deu, test_a_inp_eng), axis = 0)
+    test_a_out = np.concatenate((test_a_out_esp, test_a_out_deu, test_a_out_eng), axis = 0)
     
-    test_b_inp = np.concatenate((test_b_inp_deu, test_b_inp_eng, test_b_inp_esp), axis = 0)
-    test_b_out = np.concatenate((test_b_out_deu, test_b_out_eng, test_b_out_esp), axis = 0)
-    """
-    train_inp = np.concatenate((train_inp_eng, train_inp_esp, train_inp_deu), axis = 0)
-    train_out = np.concatenate((train_out_eng, train_out_esp, train_out_deu), axis = 0)
-    
-    test_a_inp = np.concatenate((test_a_inp_eng, test_a_inp_esp, test_a_inp_deu), axis = 0)
-    test_a_out = np.concatenate((test_a_out_eng, test_a_out_esp, test_a_out_deu), axis = 0)
-    
-    test_b_inp = np.concatenate((test_b_inp_eng, test_b_inp_esp, test_b_inp_deu), axis = 0)
-    test_b_out = np.concatenate((test_b_out_eng, test_b_out_esp, test_b_out_deu), axis = 0)
+    test_b_inp = np.concatenate((test_b_inp_esp, test_b_inp_deu, test_b_inp_eng), axis = 0)
+    test_b_out = np.concatenate((test_b_out_esp, test_b_out_deu, test_b_out_eng), axis = 0)
     
     train_inp, train_out = shuffle(train_inp, train_out)
     test_a_inp, test_a_out = shuffle(test_a_inp, test_a_out)
@@ -207,7 +198,7 @@ def train(args):
     model = Model(args)
     train_loss = 0
     maximum = 0
-    #builder = tf.saved_model.builder.SavedModelBuilder("./model")
+    builder = tf.saved_model.builder.SavedModelBuilder("./modelAll")
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         #sess.run(tf.initialize_all_variables())
@@ -223,9 +214,9 @@ def train(args):
         fprecision = open('StatisticalNER/' + args.model_name + '_' + str(args.sentence_length) + '_precision.txt', 'w')
         frecall = open('StatisticalNER/' + args.model_name + '_' + str(args.sentence_length) + '_recall.txt', 'w')
         
-        
+        print ("Len of train: " + str(len(train_inp)))
         for e in range(args.epoch):   
-            print ("Len of train: " + str(len(train_inp)))
+            
             for ptr in range(0, len(train_inp), args.batch_size):
 
                 assert not np.any(np.isnan(train_inp[ptr:ptr + args.batch_size]))
@@ -274,15 +265,15 @@ def train(args):
         frecall.close()
         ff1.close()
         
-        #builder.add_meta_graph_and_variables(sess, [tf.saved_model.tag_constants.SERVING])
-        #builder.save(True)
+        builder.add_meta_graph_and_variables(sess, [tf.saved_model.tag_constants.SERVING])
+        builder.save(True)
 
 
 
 def predict(args):
-    train_inp, train_out = get_train_data('deu_combined')
-    test_a_inp, test_a_out = get_test_a_data('deu_combined')
-    test_b_inp, test_b_out = get_test_b_data('deu_combined')
+    train_inp, train_out = get_train_data('eng_combined')
+    test_a_inp, test_a_out = get_test_a_data('eng_combined')
+    test_b_inp, test_b_out = get_test_b_data('eng_combined')
     
     """
     train_inp_eng, train_out_eng = get_train_data('eng_combined')
@@ -323,7 +314,7 @@ def predict(args):
     with tf.Session() as sess:
        
         saver = tf.train.Saver()
-        saver.restore(sess, 'model_All_30_CCA512_max.ckpt')
+        saver.restore(sess, 'model_SpanishGerman_noPosNoChunk_MultiCCA512_max.ckpt')
         print("model restored")
         
         print ('\n --------- test a data ------------')
