@@ -141,25 +141,25 @@ def f1(args, prediction, target, length):
         precision.append(tp[i] * 1.0 / (tp[i] + fp[i]))
         recall.append(tp[i] * 1.0 / (tp[i] + fn[i]))
         fscore.append(2.0 * precision[i] * recall[i] / (precision[i] + recall[i]))
-    #print ("precision ", precision)
-    #print ("recall ", recall)
+    print ("precision ", precision)
+    print ("recall ", recall)
     print ("f1 score ", fscore)
     return fscore[args.class_size],precision[args.class_size],recall[args.class_size]
 
 
 def train(args):
     
-    train_inp_eng, train_out_eng = get_train_data('eng_combined')
-    test_a_inp_eng, test_a_out_eng = get_test_a_data('eng_combined')
-    test_b_inp_eng, test_b_out_eng = get_test_b_data('eng_combined')
+    train_inp_eng, train_out_eng = get_train_data('eng')
+    test_a_inp_eng, test_a_out_eng = get_test_a_data('eng')
+    test_b_inp_eng, test_b_out_eng = get_test_b_data('eng')
     
-    train_inp_esp, train_out_esp = get_train_data('esp_combined')
-    test_a_inp_esp, test_a_out_esp = get_test_a_data('esp_combined')
-    test_b_inp_esp, test_b_out_esp = get_test_b_data('esp_combined')
+    train_inp_esp, train_out_esp = get_train_data('esp')
+    test_a_inp_esp, test_a_out_esp = get_test_a_data('esp')
+    test_b_inp_esp, test_b_out_esp = get_test_b_data('esp')
         
-    train_inp_deu, train_out_deu = get_train_data('deu_combined')
-    test_a_inp_deu, test_a_out_deu = get_test_a_data('deu_combined')
-    test_b_inp_deu, test_b_out_deu = get_test_b_data('deu_combined')
+    train_inp_deu, train_out_deu = get_train_data('deu')
+    test_a_inp_deu, test_a_out_deu = get_test_a_data('deu')
+    test_b_inp_deu, test_b_out_deu = get_test_b_data('deu')
     
     train_inp_deu = np.asarray(train_inp_deu)
     train_out_deu = np.asarray(train_out_deu)
@@ -191,6 +191,12 @@ def train(args):
     test_b_inp = np.concatenate((test_b_inp_esp, test_b_inp_deu, test_b_inp_eng), axis = 0)
     test_b_out = np.concatenate((test_b_out_esp, test_b_out_deu, test_b_out_eng), axis = 0)
     
+    """
+    train_inp, train_out = get_train_data('deu')
+    test_a_inp, test_a_out = get_test_a_data('deu')
+    test_b_inp, test_b_out = get_test_b_data('deu')
+    """
+    
     train_inp, train_out = shuffle(train_inp, train_out)
     test_a_inp, test_a_out = shuffle(test_a_inp, test_a_out)
     test_b_inp, test_b_out = shuffle(test_b_inp, test_b_out)
@@ -198,7 +204,7 @@ def train(args):
     model = Model(args)
     train_loss = 0
     maximum = 0
-    builder = tf.saved_model.builder.SavedModelBuilder("./modelAll")
+    #builder = tf.saved_model.builder.SavedModelBuilder("./AngerModel1")
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         #sess.run(tf.initialize_all_variables())
@@ -223,8 +229,9 @@ def train(args):
                 
                 _ , t_loss, predi = sess.run([model.train_op, model.loss, model.prediction], 
                                              {model.input_data: train_inp[ptr:ptr + args.batch_size],
-                                          model.output_data: train_out[ptr:ptr + args.batch_size],
-                                          model.dropout: 0.5})
+                                              model.output_data: train_out[ptr:ptr + args.batch_size],
+                                              model.dropout: float(0.5) 
+                                             })
                     
                         
             if e % 10 == 0:
@@ -265,15 +272,15 @@ def train(args):
         frecall.close()
         ff1.close()
         
-        builder.add_meta_graph_and_variables(sess, [tf.saved_model.tag_constants.SERVING])
-        builder.save(True)
+        #builder.add_meta_graph_and_variables(sess, [tf.saved_model.tag_constants.SERVING])
+        #builder.save(True)
 
 
 
 def predict(args):
-    train_inp, train_out = get_train_data('eng_combined')
-    test_a_inp, test_a_out = get_test_a_data('eng_combined')
-    test_b_inp, test_b_out = get_test_b_data('eng_combined')
+    train_inp, train_out = get_train_data('deu')
+    test_a_inp, test_a_out = get_test_a_data('deu')
+    test_b_inp, test_b_out = get_test_b_data('deu')
     
     """
     train_inp_eng, train_out_eng = get_train_data('eng_combined')
@@ -314,7 +321,7 @@ def predict(args):
     with tf.Session() as sess:
        
         saver = tf.train.Saver()
-        saver.restore(sess, 'model_SpanishGerman_noPosNoChunk_MultiCCA512_max.ckpt')
+        saver.restore(sess, 'model_MultiSkip_All_max.ckpt')
         print("model restored")
         
         print ('\n --------- test a data ------------')

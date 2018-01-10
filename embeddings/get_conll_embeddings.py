@@ -73,7 +73,7 @@ def get_input_eng(model, word_dim, input_file, output_embed, output_tag, sentenc
     for line in open(input_file):
         if line in ['\n', '\r\n']:
             for _ in range(max_sentence_length - sentence_length):
-                tag.append(np.array([0] * 5))
+                tag.append(np.array([0] * 5))#important for the number of classes that we have on the model
                 temp = np.array([0 for _ in range(word_dim + 1)])#important when no Chunk or Pos requiered
                 #print(temp.shape)
                 word.append(temp)
@@ -85,7 +85,7 @@ def get_input_eng(model, word_dim, input_file, output_embed, output_tag, sentenc
         else:
             assert (len(line.split()) == 4)
             sentence_length += 1
-            temp = model[line.split()[0]]
+            temp = model['en:' + line.split()[0]]
             #temp = model['en:' + line.split()[0]]
             assert len(temp) == word_dim
             #temp = np.append(temp, pos(line.split()[1]))  # adding pos embeddings
@@ -93,6 +93,28 @@ def get_input_eng(model, word_dim, input_file, output_embed, output_tag, sentenc
             temp = np.append(temp, capital(line.split()[0]))  # adding capital embedding
             word.append(temp)
             t = line.split()[3]
+            """
+            # 8 classes with BIO notation
+            if t == ('I-PER'):#t.endswith('PER'):
+                tag.append(np.array([1, 0, 0, 0, 0, 0, 0, 0]))
+            elif t == ('I-LOC'):
+                tag.append(np.array([0, 1, 0, 0, 0, 0, 0, 0]))
+            elif t == ('B-LOC'):
+                tag.append(np.array([0, 0, 1, 0, 0, 0, 0, 0]))
+            elif t == ('I-MISC'):
+                tag.append(np.array([0, 0, 0, 1, 0, 0, 0, 0]))
+            elif t == ('B-MISC'):
+                tag.append(np.array([0, 0, 0, 0, 1, 0, 0, 0]))
+            elif t == ('I-ORG'):
+                tag.append(np.array([0, 0, 0, 0, 0, 1, 0, 0]))
+            elif t == ('B-ORG'):
+                tag.append(np.array([0, 0, 0, 0, 0, 0, 1, 0]))
+            elif t.endswith('O'):
+                tag.append(np.array([0, 0, 0, 0, 0, 0, 0, 1]))
+            else:
+                print("error in input tag {%s}" % t)
+                sys.exit(0)
+            """    
             # Five classes 0-None,1-Person,2-Location,3-Organisation,4-Misc
             if t.endswith('PER'):
                 tag.append(np.array([1, 0, 0, 0, 0]))
@@ -106,7 +128,8 @@ def get_input_eng(model, word_dim, input_file, output_embed, output_tag, sentenc
                 tag.append(np.array([0, 0, 0, 0, 1]))
             else:
                 print("error in input tag {%s}" % t)
-                sys.exit(0)
+                sys.exit(0)    
+                
     assert (len(sentence) == len(sentence_tag))
     print('last verification: '+str(len(sentence[0][0])))
     pkl.dump(sentence, open(output_embed, 'wb'))
@@ -139,10 +162,10 @@ def get_input_esp(model, word_dim, input_file, output_embed, output_tag, sentenc
             word = []
             tag = []
         else:
-            #line = line.decode('latin-1')
+            line = line.decode('latin-1')
             assert (len(line.split()) == 2)# this is for spanish
             sentence_length += 1
-            temp = model[line.split()[0]]
+            temp = model['es:'+line.split()[0]]
             #temp = model['es:' + line.split()[0]]
             assert len(temp) == word_dim
             #temp = np.append(temp, pos(line.split()[1]))  # adding pos embeddings
@@ -176,6 +199,7 @@ def get_input_deu(model, word_dim, input_file, output_embed, output_tag, sentenc
     tag = []
     sentence = []
     sentence_tag = []
+    i_line = 0 
     if sentence_length == -1:
         max_sentence_length = find_max_length(input_file)
     else:
@@ -183,10 +207,11 @@ def get_input_deu(model, word_dim, input_file, output_embed, output_tag, sentenc
     sentence_length = 0
     print("max sentence length is %d" % max_sentence_length)
     for line in open(input_file):
+        i_line += 1
         if line in ['\n', '\r\n', ':   \n','  ADV O O\n']:
             for _ in range(max_sentence_length - sentence_length):
-                tag.append(np.array([0] * 5))
-                temp = np.array([0 for _ in range(word_dim + 1)])#important when no Chunk or Pos requiered
+                tag.append(np.array([0] * 5))#important for the number of classes!!
+                temp = np.array([0 for _ in range(word_dim + 1 )])#important when no Chunk or Pos requiered11
                 #print(temp.shape)
                 word.append(temp)
             sentence.append(word)
@@ -195,11 +220,12 @@ def get_input_deu(model, word_dim, input_file, output_embed, output_tag, sentenc
             word = []
             tag = []
         else:
-            print(len(line.decode('latin-1').split()))
-            assert (len(line.decode('latin-1').split()) == 5), print('de:' + line.split()[0])
+            #print(len(line.decode('UTF-8').split()))
+            line = line.decode('latin-1')
+            assert (len(line.split()) == 5), print(line + str(i_line))
             sentence_length += 1
             #temp = model['de:' + line.split()[0]]
-            temp = model[line.split()[0]]
+            temp = model['de:'+line.split()[0]]
             assert len(temp) == word_dim, temp
             #temp = np.append(temp, pos(line.split()[1]))  # adding pos embeddings
             #temp = np.append(temp, chunk(line.split()[2]))  # adding chunk embeddings
@@ -207,6 +233,7 @@ def get_input_deu(model, word_dim, input_file, output_embed, output_tag, sentenc
             word.append(temp)
             t = line.split()[4]
             # Five classes 0-None,1-Person,2-Location,3-Organisation,4-Misc
+            
             if t.endswith('PER'):
                 tag.append(np.array([1, 0, 0, 0, 0]))
             elif t.endswith('LOC'):
@@ -220,6 +247,14 @@ def get_input_deu(model, word_dim, input_file, output_embed, output_tag, sentenc
             else:
                 print("error in input tag {%s}" % t)
                 sys.exit(0)
+            """
+            # One class 0-None,1-Anger
+            if t.endswith('ANGER'):
+                tag.append(np.array([1,0]))
+            else:
+                tag.append(np.array([0,1]))
+            """    
+            
     assert (len(sentence) == len(sentence_tag))
     print('last verification: '+str(len(sentence[0][0])))
     pkl.dump(sentence, open(output_embed, 'wb'))
@@ -232,15 +267,17 @@ def get_tags(input_file):
     for line in open(input_file):
         if line in ['\n', '\r\n']:
             continue
+        elif '-DOCSTART-' in line: 
+            continue
         else :
             try:
-                tag = line.split()[1]
+                tag = line.split()[3]
+                if tag in tags:
+                    tags[tag] +=1
+                else:
+                    tags[tag] =1
             except:
                 print(line)
-            if tag in tags:
-                continue
-            else:
-               tags[tag] +=1
     return tags
 
 """
